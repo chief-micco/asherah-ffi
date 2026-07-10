@@ -60,7 +60,7 @@ public class MultiThreadedSessionCacheTests
     }
 
     [Fact]
-    public void ConcurrentGetSession_DecryptFromSharedPartition_ShouldNotThrow()
+    public async Task ConcurrentGetSession_DecryptFromSharedPartition_ShouldNotThrow()
     {
         using var factory = AsherahFactory.FromConfig(BuildConfig());
 
@@ -88,6 +88,7 @@ public class MultiThreadedSessionCacheTests
         using var startGate = new Barrier(WorkerThreads);
         var tasks = new Task[WorkerThreads];
 
+        var ct = TestContext.Current.CancellationToken;
         var deadline = DateTime.UtcNow + WorkerDuration;
         for (var t = 0; t < WorkerThreads; t++)
         {
@@ -97,7 +98,7 @@ public class MultiThreadedSessionCacheTests
                 var rng = new Random(seed);
                 // Release all workers at once to maximise contention on the
                 // factory's session cache and dispose paths.
-                startGate.SignalAndWait();
+                startGate.SignalAndWait(ct);
 
                 var op = 0;
                 while (DateTime.UtcNow < deadline)
@@ -120,10 +121,10 @@ public class MultiThreadedSessionCacheTests
                     }
                     op++;
                 }
-            });
+            }, ct);
         }
 
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         // Report NRE separately so the failure message clearly identifies
         // the production symptom this test is chasing.
@@ -153,7 +154,7 @@ public class MultiThreadedSessionCacheTests
     /// serving many hot tenants through one shared factory.
     /// </summary>
     [Fact]
-    public void ConcurrentGetSession_WithCacheChurn_ShouldNotThrow()
+    public async Task ConcurrentGetSession_WithCacheChurn_ShouldNotThrow()
     {
         const int Partitions = 128;
         const int Threads = 64;
@@ -195,6 +196,7 @@ public class MultiThreadedSessionCacheTests
         using var startGate = new Barrier(Threads);
         var tasks = new Task[Threads];
 
+        var ct = TestContext.Current.CancellationToken;
         var deadline = DateTime.UtcNow + duration;
         for (var t = 0; t < Threads; t++)
         {
@@ -202,7 +204,7 @@ public class MultiThreadedSessionCacheTests
             tasks[t] = Task.Run(() =>
             {
                 var rng = new Random(seed * 1013 + 17);
-                startGate.SignalAndWait();
+                startGate.SignalAndWait(ct);
 
                 var op = 0;
                 while (DateTime.UtcNow < deadline)
@@ -225,10 +227,10 @@ public class MultiThreadedSessionCacheTests
                     }
                     op++;
                 }
-            });
+            }, ct);
         }
 
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         var nreCount = 0;
         foreach (var e in errors)
