@@ -104,7 +104,7 @@ public class RotationTests
             var drr1 = await AsherahApi.EncryptAsync("p1", Encoding.UTF8.GetBytes("before-async"));
             var ik1 = IkCreated(Encoding.UTF8.GetString(drr1));
 
-            await Task.Delay(3000);
+            await Task.Delay(3000, TestContext.Current.CancellationToken);
 
             var drr2 = await AsherahApi.EncryptAsync("p1", Encoding.UTF8.GetBytes("after-async"));
             var ik2 = IkCreated(Encoding.UTF8.GetString(drr2));
@@ -133,7 +133,7 @@ public class RotationTests
             var drrSyncPre = AsherahApi.EncryptString("p1", "sync-pre");
             var drrAsyncPre = await AsherahApi.EncryptAsync("p1", Encoding.UTF8.GetBytes("async-pre"));
 
-            await Task.Delay(3000);
+            await Task.Delay(3000, TestContext.Current.CancellationToken);
 
             var drrSyncPost = AsherahApi.EncryptString("p1", "sync-post");
             var drrAsyncPost = await AsherahApi.EncryptAsync("p1", Encoding.UTF8.GetBytes("async-post"));
@@ -187,7 +187,7 @@ public class RotationTests
                 drrs.Add(drr);
                 payloads.Add(payload);
                 iks.Add(IkCreated(Encoding.UTF8.GetString(drr)));
-                await Task.Delay(3000);
+                await Task.Delay(3000, TestContext.Current.CancellationToken);
             }
 
             // Each cycle's IK must be strictly newer than the previous.

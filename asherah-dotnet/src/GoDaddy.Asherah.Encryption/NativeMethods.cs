@@ -125,4 +125,5 @@ internal struct AsherahBuffer
 {
     public IntPtr data;
     public UIntPtr len;
+    public UIntPtr capacity;
 }
